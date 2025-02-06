@@ -13,7 +13,14 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors({ origin: "http://localhost:3000", credentials: true })); // Allow frontend access
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000", // For local development
+      "https://your-vercel-app-url.vercel.app", // Production frontend URL
+    ],
+  })
+); // Allow frontend access
 app.use(express.json());
 
 // Session setup
