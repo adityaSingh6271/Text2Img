@@ -17,13 +17,7 @@ export default function AIImageGenerator() {
   const [error, setError] = useState("");
   const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 
-  // Load username from localStorage if available
-  useEffect(() => {
-    const storedUser = localStorage.getItem("username");
-    if (storedUser) {
-      setUsername(storedUser);
-    }
-  }, []);
+
 
   const handleLogout = () => {
     localStorage.removeItem("username");
@@ -253,6 +247,7 @@ export default function AIImageGenerator() {
                     src={img}
                     alt={`AI Generated Art ${index + 1}`}
                     fill
+                    unoptimized
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
