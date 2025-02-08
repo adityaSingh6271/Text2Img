@@ -17,7 +17,13 @@ export default function AIImageGenerator() {
   const [error, setError] = useState("");
   const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 
-
+  // Load username from localStorage when the component mounts.
+  useEffect(() => {
+    const storedUser = localStorage.getItem("username");
+    if (storedUser) {
+      setUsername(storedUser);
+    }
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("username");
@@ -51,22 +57,26 @@ export default function AIImageGenerator() {
           negprompt: negativePrompt,
           style,
           aspect_ratio: aspectRatio,
-          samples: Math.min(samples, 4), // Ensure max 4 samples
+          samples: Math.min(samples, 4), // Ensure a maximum of 4 samples
           safe_filter: true,
         }),
       });
 
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      
+
       const data = await response.json();
       if (data.process_id) {
         pollForImage(data.process_id);
       } else {
         throw new Error("Failed to start image generation process");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Generation error:", err);
-      setError(err.message || "Image generation failed. Please try again.");
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Image generation failed. Please try again.");
+      }
       setLoading(false);
     }
   };
@@ -88,9 +98,9 @@ export default function AIImageGenerator() {
         const response = await fetch(statusUrl, {
           headers: { Authorization: `Bearer ${API_KEY}` },
         });
-        
+
         if (!response.ok) throw new Error(`Status check failed: ${response.status}`);
-        
+
         const statusData = await response.json();
         console.log("Generation status:", statusData.status);
 
@@ -110,9 +120,13 @@ export default function AIImageGenerator() {
           default:
             throw new Error(statusData.error?.message || "Generation process failed");
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Polling error:", err);
-        setError(err.message || "Error checking generation status");
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Error checking generation status");
+        }
         setLoading(false);
       }
     };
@@ -127,9 +141,7 @@ export default function AIImageGenerator() {
           <h2 className="text-3xl font-bold">
             Hello <span className="text-blue-400">{username}</span>
           </h2>
-          <p className="text-lg text-gray-300">
-            AI Image Generation Platform
-          </p>
+          <p className="text-lg text-gray-300">AI Image Generation Platform</p>
         </div>
         <button
           onClick={handleLogout}
@@ -171,8 +183,10 @@ export default function AIImageGenerator() {
                 value={style}
                 onChange={(e) => setStyle(e.target.value)}
               >
-                {["Realistic", "Anime", "Digital Art", "Painterly", "Cyberpunk"].map((style) => (
-                  <option key={style} value={style}>{style}</option>
+                {["Realistic", "Anime", "Digital Art", "Painterly", "Cyberpunk"].map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
                 ))}
               </select>
             </div>
@@ -185,7 +199,9 @@ export default function AIImageGenerator() {
                 onChange={(e) => setAspectRatio(e.target.value)}
               >
                 {["square", "portrait", "landscape"].map((ratio) => (
-                  <option key={ratio} value={ratio}>{ratio}</option>
+                  <option key={ratio} value={ratio}>
+                    {ratio}
+                  </option>
                 ))}
               </select>
             </div>
@@ -199,16 +215,16 @@ export default function AIImageGenerator() {
               onChange={(e) => setSamples(Number(e.target.value))}
             >
               {[1, 2, 3, 4].map((num) => (
-                <option key={num} value={num}>{num}</option>
+                <option key={num} value={num}>
+                  {num}
+                </option>
               ))}
             </select>
           </div>
 
           <button
             className={`w-full py-3 mt-4 rounded-lg font-semibold transition-all duration-300 ${
-              loading 
-                ? "bg-gray-600 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700 hover:scale-[1.02]"
+              loading ? "bg-gray-600 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 hover:scale-[1.02]"
             }`}
             onClick={generateImage}
             disabled={loading}
@@ -233,9 +249,7 @@ export default function AIImageGenerator() {
 
       {images.length > 0 && (
         <section className="mt-12 max-w-6xl mx-auto px-4">
-          <h3 className="text-2xl font-bold text-center mb-8 text-blue-400">
-            Generated Masterpieces
-          </h3>
+          <h3 className="text-2xl font-bold text-center mb-8 text-blue-400">Generated Masterpieces</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {images.map((img, index) => (
               <div
@@ -253,9 +267,7 @@ export default function AIImageGenerator() {
                   />
                 </div>
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4">
-                  <p className="text-lg font-semibold text-center mb-3">
-                    Artwork #{index + 1}
-                  </p>
+                  <p className="text-lg font-semibold text-center mb-3">Artwork #{index + 1}</p>
                   <div className="flex space-x-3">
                     <a
                       href={img}
@@ -280,8 +292,14 @@ export default function AIImageGenerator() {
 
       <style jsx>{`
         @keyframes slideIn {
-          from { transform: translateX(-100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
+          from {
+            transform: translateX(-100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
         }
         .animate-slide-in {
           animation: slideIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
